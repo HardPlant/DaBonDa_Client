@@ -1,6 +1,8 @@
 import RPi.GPIO as GPIO
 from picamera import PiCamera
 import datetime
+import io
+import base64
 
 from time import sleep
 
@@ -12,6 +14,8 @@ GPIO.setup(SOUND_LOW,GPIO.IN)
 
 SOUND_HIGH = 21
 GPIO.setup(SOUND_HIGH, GPIO.IN)
+
+streamFile = io.BytesIO()
 
 if __name__ == "__main__":
 	try:
@@ -30,10 +34,12 @@ if __name__ == "__main__":
 				high_count = high_queue.count(0)
 				float_time = datetime.datetime.now().timestamp()
 				
-				camera.capture(str(float_time), 'jpeg', resize=(320,240), quality=30)
-				print(low_count, ",", high_count, str(float_time))
+				camera.capture(streamFile, 'jpeg', resize=(320,240), quality=30)
+				b64 = base64.b64encode(streamFile.getbuffer())
+				print(low_count, ",", high_count, len(b64))
 				low_queue.clear()
 				high_queue.clear()
+				streamFile.truncate(0)
 				
 			
 			sleep(0.005)
