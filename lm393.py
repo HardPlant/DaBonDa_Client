@@ -31,17 +31,17 @@ def getId():
 def postRequest(data):
 	global url
 	body = json.dumps(data)
-	print(body)
+	print("req length ", len(body))
 	resp = requests.post(url=url,json=body)
 	print(resp)
 
 def makeSoundData(id, low, high, image, date):
-	image = len(image)
+	print("img len", len(image))
 	return {
 		'id' : id,
 		'low' : low,
 		'high' : high,
-		'image' : image,
+		'image' : str(image,'utf-8'),
 		'date' : date
 	}
 
@@ -63,14 +63,17 @@ if __name__ == "__main__":
 				high_count = high_queue.count(0)
 				float_time = datetime.datetime.now().timestamp()
 				
-				camera.capture(streamFile, 'jpeg', resize=(320,240), quality=30)
+				print("before buffer: ", len(streamFile.getbuffer()))
+				cam = camera.capture(streamFile, 'jpeg', resize=(320,240), quality=30)
+				print("after buffer: ", len(streamFile.getbuffer()))
 				b64 = base64.b64encode(streamFile.getbuffer())
 				print(low_count, ",", high_count, len(b64))
 				data = makeSoundData(id,low_count,high_count,b64,float_time)
 				postRequest(data)
-
+				
 				low_queue.clear()
 				high_queue.clear()
+				streamFile.seek(0)
 				streamFile.truncate(0)
 				
 			
