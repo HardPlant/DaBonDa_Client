@@ -3,6 +3,8 @@ from picamera import PiCamera
 import datetime
 import io
 import base64
+import requests
+import json
 
 from time import sleep
 
@@ -16,8 +18,35 @@ SOUND_HIGH = 21
 GPIO.setup(SOUND_HIGH, GPIO.IN)
 
 streamFile = io.BytesIO()
+id = -1
+SERVER = 'http://168.131.42.48:32772' 
+url = SERVER + '/sound_data'
+
+def getId():
+	with open('id') as idFile:
+		data = str(idFile.read())
+	id = int(data)
+	return id
+
+def postRequest(data):
+	global url
+	body = json.dumps(data)
+	print(body)
+	resp = requests.post(url=url,json=body)
+	print(resp)
+
+def makeSoundData(id, low, high, image, date):
+	image = len(image)
+	return {
+		'id' : id,
+		'low' : low,
+		'high' : high,
+		'image' : image,
+		'date' : date
+	}
 
 if __name__ == "__main__":
+	id = getId()
 	try:
 		low_queue = []
 		high_queue = []
@@ -37,6 +66,9 @@ if __name__ == "__main__":
 				camera.capture(streamFile, 'jpeg', resize=(320,240), quality=30)
 				b64 = base64.b64encode(streamFile.getbuffer())
 				print(low_count, ",", high_count, len(b64))
+				data = makeSoundData(id,low_count,high_count,b64,float_time)
+				postRequest(data)
+
 				low_queue.clear()
 				high_queue.clear()
 				streamFile.truncate(0)
